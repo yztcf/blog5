@@ -2902,7 +2902,8 @@ body {
   z-index: 9999;
   display: flex;
   align-items: flex-end;
-  flex-direction: row-reverse;
+  /* ⭐ 修改：去掉 flex-direction: row-reverse，默认从左到右 */
+  flex-direction: row;
   touch-action: none;
   user-select: none;
 }
@@ -2943,7 +2944,8 @@ body {
   font-size: 13px;
   color: #333;
   white-space: nowrap;
-  margin-right: 8px;
+  /* ⭐ 修改：气泡在猫咪左边，所以 margin-right 改为 margin-left */
+  margin-left: 8px;
   margin-bottom: 8px;
   opacity: 0;
   visibility: hidden;
@@ -2955,11 +2957,13 @@ body {
 .cat-bubble::after {
   content: "";
   position: absolute;
-  right: -8px;
+  /* ⭐ 修改：气泡在左边，箭头指向右边（猫咪方向） */
+  left: -8px;
+  right: auto;
   bottom: 14px;
-  border-width: 8px 0 0 8px;
+  border-width: 8px 8px 0 0;
   border-style: solid;
-  border-color: transparent transparent transparent #fff;
+  border-color: transparent #ffffff transparent transparent;
 }
 /* 悬停显示气泡 */
 .cat-container:hover .cat-bubble {
@@ -3046,7 +3050,9 @@ body {
   }
   .cat-bubble {
     font-size: 12px;
-    margin-right: 6px;
+    /* ⭐ 修改：手机端也改成 margin-left */
+    margin-left: 6px;
+    margin-right: 0;
     margin-bottom: 6px;
   }
   .chat-window {
@@ -3078,16 +3084,16 @@ body {
 }
 </style>
 
-<!-- ===== HTML ===== -->
+<!-- ===== HTML（DOM 顺序调整：小猫在前，气泡在后） ===== -->
 
 <!-- 猫咪容器（整体移动） -->
 <div class="cat-container" id="catContainer">
-  <!-- 气泡（放在猫咪前面） -->
-  <div class="cat-bubble" id="bubbleText">路过的时候记得摸摸我</div>
-  <!-- 猫咪 -->
+  <!-- ⭐ 修改：小猫放在前面（右边） -->
   <button class="cat-chat-btn" id="catTrigger">
     <img src="https://img.alicdn.com/imgextra/i1/O1CN01vYTGqS28ahTROhXdP_!!6000000007949-1-tps-480-480.gif" alt="Meoo">
   </button>
+  <!-- ⭐ 修改：气泡放在后面（左边） -->
+  <div class="cat-bubble" id="bubbleText">路过的时候记得摸摸我</div>
 </div>
 
 <!-- 遮罩 -->
