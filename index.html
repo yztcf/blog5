@@ -2894,22 +2894,30 @@ body {
 <!-- ===== 猫咪聊天组件 (右下角 纯猫咪 + 无边框小窗 + 轮播气泡) ===== -->
 
 <style>
-/* ===== 猫咪 - 纯图片（支持拖拽） ===== */
-.cat-chat-btn {
+/* ===== 猫咪容器（包含猫咪+气泡，整体移动） ===== */
+.cat-container {
   position: fixed;
   right: 16px;
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  flex-direction: row-reverse;
+  touch-action: none;
+  user-select: none;
+}
+
+/* ===== 猫咪按钮 ===== */
+.cat-chat-btn {
   width: 48px;
   height: 48px;
   cursor: grab;
-  z-index: 9999;
   background: transparent;
   border: none;
   box-shadow: none;
   border-radius: 0;
   padding: 0;
-  touch-action: none;
-  user-select: none;
+  flex-shrink: 0;
 }
 .cat-chat-btn:active { cursor: grabbing; }
 .cat-chat-btn img {
@@ -2920,17 +2928,14 @@ body {
   border-radius: 50%;
   pointer-events: none;
 }
-/* 拖拽时的放大效果 */
-.cat-chat-btn.dragging {
+/* 拖拽放大 */
+.cat-container.dragging .cat-chat-btn {
   transform: scale(1.15);
   transition: transform 0.15s ease;
 }
 
-/* ===== 对话气泡容器 ===== */
+/* ===== 气泡（相对于容器定位） ===== */
 .cat-bubble {
-  position: fixed;
-  right: 64px;
-  bottom: calc(52px + env(safe-area-inset-bottom, 0px));
   padding: 8px 12px;
   background: #ffffff;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
@@ -2938,12 +2943,14 @@ body {
   font-size: 13px;
   color: #333;
   white-space: nowrap;
-  z-index: 10000;
+  margin-right: 8px;
+  margin-bottom: 8px;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.24s ease;
   animation: bubbleBounce 1.2s ease-in-out infinite alternate;
   pointer-events: none;
+  position: relative;
 }
 .cat-bubble::after {
   content: "";
@@ -2954,13 +2961,14 @@ body {
   border-style: solid;
   border-color: transparent transparent transparent #fff;
 }
+/* 悬停显示气泡 */
+.cat-container:hover .cat-bubble {
+  opacity: 1;
+  visibility: visible;
+}
 @keyframes bubbleBounce {
   0% { transform: translateY(0px); }
   100% { transform: translateY(-4px); }
-}
-.cat-chat-btn:hover + .cat-bubble {
-  opacity: 1;
-  visibility: visible;
 }
 
 /* ===== 遮罩层 ===== */
@@ -3028,15 +3036,18 @@ body {
 
 /* ===== 手机端 ===== */
 @media (max-width: 640px) {
-  .cat-chat-btn {
+  .cat-container {
     right: 12px;
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .cat-chat-btn {
     width: 44px;
     height: 44px;
   }
   .cat-bubble {
-    right: 56px;
-    font-size:12px;
+    font-size: 12px;
+    margin-right: 6px;
+    margin-bottom: 6px;
   }
   .chat-window {
     right: 10px;
@@ -3069,14 +3080,20 @@ body {
 
 <!-- ===== HTML ===== -->
 
-<div class="cat-chat-btn" id="catTrigger">
-  <img src="https://img.alicdn.com/imgextra/i1/O1CN01vYTGqS28ahTROhXdP_!!6000000007949-1-tps-480-480.gif" alt="Meoo">
+<!-- 猫咪容器（整体移动） -->
+<div class="cat-container" id="catContainer">
+  <!-- 气泡（放在猫咪前面） -->
+  <div class="cat-bubble" id="bubbleText">路过的时候记得摸摸我</div>
+  <!-- 猫咪 -->
+  <button class="cat-chat-btn" id="catTrigger">
+    <img src="https://img.alicdn.com/imgextra/i1/O1CN01vYTGqS28ahTROhXdP_!!6000000007949-1-tps-480-480.gif" alt="Meoo">
+  </button>
 </div>
 
-<div class="cat-bubble" id="bubbleText">路过的时候记得摸摸我</div>
-
+<!-- 遮罩 -->
 <div class="chat-modal" id="chatModal"></div>
 
+<!-- 聊天小窗 -->
 <div class="chat-window" id="chatWindow">
   <button class="chat-close" id="closeChat">✕</button>
   <iframe src="https://aichat.yztcf.de5.net/" loading="lazy"></iframe>
@@ -3084,13 +3101,14 @@ body {
 
 <script>
 (function() {
+  const container = document.getElementById('catContainer');
   const trigger = document.getElementById('catTrigger');
   const modal = document.getElementById('chatModal');
   const chatWindow = document.getElementById('chatWindow');
   const close = document.getElementById('closeChat');
   const bubble = document.getElementById('bubbleText');
 
-  if (!trigger || !modal || !chatWindow || !close || !bubble) return;
+  if (!container || !trigger || !modal || !chatWindow || !close || !bubble) return;
 
   // ===== 气泡轮播 =====
   const texts = [
@@ -3118,16 +3136,16 @@ body {
     document.body.style.overflow = '';
   }
 
-  // ===== 猫咪拖拽移动 =====
+  // ===== 整体拖拽移动 =====
   let isDragging = false;
   let startX, startY, startCatX, startCatY;
-  let downPos = null; // 用于判断点击还是拖拽
+  let downPos = null;
 
-  function setCatPosition(left, top) {
-    trigger.style.right = 'auto';
-    trigger.style.bottom = 'auto';
-    trigger.style.left = left + 'px';
-    trigger.style.top = top + 'px';
+  function setContainerPosition(left, top) {
+    container.style.right = 'auto';
+    container.style.bottom = 'auto';
+    container.style.left = left + 'px';
+    container.style.top = top + 'px';
   }
 
   function onDragStart(e) {
@@ -3137,11 +3155,11 @@ body {
     startX = touch.clientX;
     startY = touch.clientY;
 
-    const rect = trigger.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     startCatX = rect.left;
     startCatY = rect.top;
 
-    trigger.classList.add('dragging');
+    container.classList.add('dragging');
     document.addEventListener('mousemove', onDragMove);
     document.addEventListener('mouseup', onDragEnd);
     document.addEventListener('touchmove', onDragMove, { passive: false });
@@ -3158,34 +3176,33 @@ body {
     let newLeft = startCatX + deltaX;
     let newTop = startCatY + deltaY;
 
-    const catW = trigger.offsetWidth;
-    const catH = trigger.offsetHeight;
+    const catW = container.offsetWidth;
+    const catH = container.offsetHeight;
     newLeft = Math.max(0, Math.min(window.innerWidth - catW, newLeft));
     newTop = Math.max(0, Math.min(window.innerHeight - catH, newTop));
 
-    setCatPosition(newLeft, newTop);
+    setContainerPosition(newLeft, newTop);
   }
 
   function onDragEnd(e) {
     if (!isDragging) return;
     isDragging = false;
-    trigger.classList.remove('dragging');
+    container.classList.remove('dragging');
     document.removeEventListener('mousemove', onDragMove);
     document.removeEventListener('mouseup', onDragEnd);
     document.removeEventListener('touchmove', onDragMove);
     document.removeEventListener('touchend', onDragEnd);
   }
 
-  // 绑定拖拽事件
-  trigger.addEventListener('mousedown', onDragStart);
-  trigger.addEventListener('touchstart', onDragStart, { passive: false });
+  // 绑定拖拽事件到容器
+  container.addEventListener('mousedown', onDragStart);
+  container.addEventListener('touchstart', onDragStart, { passive: false });
 
-  // ===== 点击打开聊天（通过判断移动距离区分点击和拖拽） =====
-  // 鼠标
-  trigger.addEventListener('mousedown', function(e) {
+  // ===== 点击打开聊天 =====
+  container.addEventListener('mousedown', function(e) {
     downPos = { x: e.clientX, y: e.clientY };
   });
-  trigger.addEventListener('mouseup', function(e) {
+  container.addEventListener('mouseup', function(e) {
     if (downPos) {
       const dx = e.clientX - downPos.x;
       const dy = e.clientY - downPos.y;
@@ -3196,12 +3213,11 @@ body {
     downPos = null;
   });
 
-  // 触屏
-  trigger.addEventListener('touchstart', function(e) {
+  container.addEventListener('touchstart', function(e) {
     const touch = e.touches[0];
     downPos = { x: touch.clientX, y: touch.clientY };
   });
-  trigger.addEventListener('touchend', function(e) {
+  container.addEventListener('touchend', function(e) {
     if (downPos && e.changedTouches) {
       const touch = e.changedTouches[0];
       const dx = touch.clientX - downPos.x;
@@ -3213,7 +3229,7 @@ body {
     downPos = null;
   });
 
-  // ===== 关闭按钮 & 遮罩 & ESC =====
+  // ===== 关闭 =====
   close.addEventListener('click', closeChat);
   modal.addEventListener('click', closeChat);
   document.addEventListener('keydown', (e) => {
