@@ -2894,30 +2894,36 @@ body {
 <!-- ===== 猫咪聊天组件 (右下角 纯猫咪 + 无边框小窗 + 轮播气泡) ===== -->
 
 <style>
-/* ===== 猫咪 - 纯图片 ===== */
+/* ===== 猫咪 - 纯图片（支持拖拽） ===== */
 .cat-chat-btn {
   position: fixed;
   right: 16px;
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   width: 48px;
   height: 48px;
-  cursor: pointer;
+  cursor: grab;
   z-index: 9999;
-  transition: transform 0.2s ease;
   background: transparent;
   border: none;
   box-shadow: none;
   border-radius: 0;
   padding: 0;
+  touch-action: none;
+  user-select: none;
 }
-.cat-chat-btn:hover { transform: scale(1.08); }
-.cat-chat-btn:active { transform: scale(0.92); }
+.cat-chat-btn:active { cursor: grabbing; }
 .cat-chat-btn img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   border-radius: 50%;
+  pointer-events: none;
+}
+/* 拖拽时的放大效果 */
+.cat-chat-btn.dragging {
+  transform: scale(1.15);
+  transition: transform 0.15s ease;
 }
 
 /* ===== 对话气泡容器 ===== */
@@ -2937,8 +2943,8 @@ body {
   visibility: hidden;
   transition: opacity 0.24s ease;
   animation: bubbleBounce 1.2s ease-in-out infinite alternate;
+  pointer-events: none;
 }
-/* 气泡尖角 */
 .cat-bubble::after {
   content: "";
   position: absolute;
@@ -2948,12 +2954,10 @@ body {
   border-style: solid;
   border-color: transparent transparent transparent #fff;
 }
-/* 气泡上下跳动动画 */
 @keyframes bubbleBounce {
   0% { transform: translateY(0px); }
   100% { transform: translateY(-4px); }
 }
-/* hover猫咪，气泡显示 */
 .cat-chat-btn:hover + .cat-bubble {
   opacity: 1;
   visibility: visible;
@@ -2969,7 +2973,7 @@ body {
 }
 .chat-modal.show { display: block; }
 
-/* ===== 聊天小窗 - 无边框无头部 ===== */
+/* ===== 聊天小窗 ===== */
 .chat-window {
   position: fixed;
   right: 20px;
@@ -2986,14 +2990,11 @@ body {
   display: none;
   animation: slideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.chat-window.show {
-  display: block;
-}
+.chat-window.show { display: block; }
 @keyframes slideIn {
   0% { opacity: 0; transform: translateY(20px) scale(0.96); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 .chat-window iframe {
   width: 100%;
   height: 100%;
@@ -3001,7 +3002,7 @@ body {
   display: block;
 }
 
-/* ===== 关闭按钮 - 悬浮在右上角 ===== */
+/* ===== 关闭按钮 ===== */
 .chat-close {
   position: absolute;
   top: 12px;
@@ -3068,22 +3069,16 @@ body {
 
 <!-- ===== HTML ===== -->
 
-<!-- 猫咪 (右下角) -->
 <div class="cat-chat-btn" id="catTrigger">
   <img src="https://img.alicdn.com/imgextra/i1/O1CN01vYTGqS28ahTROhXdP_!!6000000007949-1-tps-480-480.gif" alt="Meoo">
 </div>
 
-<!-- 对话气泡 -->
 <div class="cat-bubble" id="bubbleText">路过的时候记得摸摸我</div>
 
-<!-- 遮罩 -->
 <div class="chat-modal" id="chatModal"></div>
 
-<!-- 聊天小窗 (无头部) -->
 <div class="chat-window" id="chatWindow">
-  <!-- 关闭按钮 -->
   <button class="chat-close" id="closeChat">✕</button>
-  <!-- 👇 替换成您的聊天地址 -->
   <iframe src="https://aichat.yztcf.de5.net/" loading="lazy"></iframe>
 </div>
 
@@ -3097,21 +3092,20 @@ body {
 
   if (!trigger || !modal || !chatWindow || !close || !bubble) return;
 
-  // 轮播文本列表
+  // ===== 气泡轮播 =====
   const texts = [
     "路过的时候记得摸摸我",
     "喵~ 今天也要元气满满",
     "欢迎访问Zhiting OS"
   ];
   let index = 0;
-
-  // 自动切换文字，3秒一轮
   function updateBubble() {
     index = (index + 1) % texts.length;
     bubble.textContent = texts[index];
   }
   setInterval(updateBubble, 3000);
 
+  // ===== 打开/关闭聊天 =====
   function openChat() {
     modal.classList.add('show');
     chatWindow.classList.add('show');
@@ -3124,7 +3118,102 @@ body {
     document.body.style.overflow = '';
   }
 
-  trigger.addEventListener('click', openChat);
+  // ===== 猫咪拖拽移动 =====
+  let isDragging = false;
+  let startX, startY, startCatX, startCatY;
+  let downPos = null; // 用于判断点击还是拖拽
+
+  function setCatPosition(left, top) {
+    trigger.style.right = 'auto';
+    trigger.style.bottom = 'auto';
+    trigger.style.left = left + 'px';
+    trigger.style.top = top + 'px';
+  }
+
+  function onDragStart(e) {
+    e.preventDefault();
+    isDragging = true;
+    const touch = e.touches ? e.touches[0] : e;
+    startX = touch.clientX;
+    startY = touch.clientY;
+
+    const rect = trigger.getBoundingClientRect();
+    startCatX = rect.left;
+    startCatY = rect.top;
+
+    trigger.classList.add('dragging');
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', onDragEnd);
+    document.addEventListener('touchmove', onDragMove, { passive: false });
+    document.addEventListener('touchend', onDragEnd);
+  }
+
+  function onDragMove(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches ? e.touches[0] : e;
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+
+    let newLeft = startCatX + deltaX;
+    let newTop = startCatY + deltaY;
+
+    const catW = trigger.offsetWidth;
+    const catH = trigger.offsetHeight;
+    newLeft = Math.max(0, Math.min(window.innerWidth - catW, newLeft));
+    newTop = Math.max(0, Math.min(window.innerHeight - catH, newTop));
+
+    setCatPosition(newLeft, newTop);
+  }
+
+  function onDragEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    trigger.classList.remove('dragging');
+    document.removeEventListener('mousemove', onDragMove);
+    document.removeEventListener('mouseup', onDragEnd);
+    document.removeEventListener('touchmove', onDragMove);
+    document.removeEventListener('touchend', onDragEnd);
+  }
+
+  // 绑定拖拽事件
+  trigger.addEventListener('mousedown', onDragStart);
+  trigger.addEventListener('touchstart', onDragStart, { passive: false });
+
+  // ===== 点击打开聊天（通过判断移动距离区分点击和拖拽） =====
+  // 鼠标
+  trigger.addEventListener('mousedown', function(e) {
+    downPos = { x: e.clientX, y: e.clientY };
+  });
+  trigger.addEventListener('mouseup', function(e) {
+    if (downPos) {
+      const dx = e.clientX - downPos.x;
+      const dy = e.clientY - downPos.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 6) {
+        openChat();
+      }
+    }
+    downPos = null;
+  });
+
+  // 触屏
+  trigger.addEventListener('touchstart', function(e) {
+    const touch = e.touches[0];
+    downPos = { x: touch.clientX, y: touch.clientY };
+  });
+  trigger.addEventListener('touchend', function(e) {
+    if (downPos && e.changedTouches) {
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - downPos.x;
+      const dy = touch.clientY - downPos.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 6) {
+        openChat();
+      }
+    }
+    downPos = null;
+  });
+
+  // ===== 关闭按钮 & 遮罩 & ESC =====
   close.addEventListener('click', closeChat);
   modal.addEventListener('click', closeChat);
   document.addEventListener('keydown', (e) => {
