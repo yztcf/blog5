@@ -2297,12 +2297,17 @@ body {
     setTimeout(function() { overlay.classList.add('active'); }, 1200);
 
     setTimeout(function() {
-      // While covered: hide hero, land on desktop top
-      document.getElementById('heroSection').style.display = 'none';
-      applyScrollLock();
-      window.scrollTo(0, 0);
-      setTimeout(function() { overlay.classList.remove('active'); }, 250);
-    }, 1800);
+    //   // While covered: hide hero, land on desktop top
+    //   document.getElementById('heroSection').style.display = 'none';
+    //   applyScrollLock();
+    //   window.scrollTo(0, 0);
+    //   setTimeout(function() { overlay.classList.remove('active'); }, 250);
+    // }, 1800);
+
+        // 直接切换到第 3 个 Tab
+        location.hash = 'system';
+        switchTab('system');
+      }, 1800);
   }
 
   document.addEventListener('keydown', function(e) {
