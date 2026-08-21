@@ -1495,7 +1495,7 @@ body {
 <!-- Transition overlay -->
 <div class="transition-overlay" id="transitionOverlay"></div>
 
-<!-- ====== PILL NAV ====== -->
+<!-- <!-- ====== PILL NAV ====== -->
 <nav class="pill-nav hidden-during-intro" id="pillNav">
   <button data-tab="home" class="active"><span class="pill-num">01</span>主页</button>
  <button data-tab="works" onclick="event.stopPropagation();location.href='https://yztcf.de5.net'">
@@ -1505,10 +1505,10 @@ body {
  <button onclick="event.stopPropagation();location.href='/Canvas/'">我的OS</button>
    <!-- <button data-tab="system" onclick="event.stopPropagation();location.href='https://os.yztcf.de5.net/infinite-canvas.html'">
 <span class="pill-num">03</span>我的OS</button>  -->
-</nav>
+</nav> -->
 
 <!-- ====== TAB 1: HOME ====== -->
-<main class="tab-page active" id="page-home">
+  <main class="tab-page" id="page-system">
 
   <!-- A. Terminal Hero -->
   <section class="hero-section" id="heroSection">
@@ -2053,7 +2053,8 @@ body {
 </main>
 
 <!-- ====== TAB 3: MY OS (canvas iframe) ====== -->
-<main class="tab-page" id="page-system">
+<main class="tab-page active" id="page-home">
+
   <div class="canvas-page">
     <iframe data-src="infinite-canvas.html" id="canvasFrame" title="Zhiting's OS Canvas"></iframe>
     <!-- <div class="canvas-hint">Scroll 缩放 · Drag 移动画布</div> -->
@@ -2102,8 +2103,7 @@ body {
       canvasFrame.src = canvasFrame.dataset.src;
       canvasLoaded = true;
 
-      // 👇 加这一行：确保 iframe 重新加载
-      canvasFrame.style.display = 'none';
+   
     }
     // Force top: immediately and after layout settles (defeats scroll anchoring)
     window.scrollTo(0, 0);
@@ -2300,17 +2300,14 @@ body {
     setTimeout(function() { overlay.classList.add('active'); }, 1200);
 
     setTimeout(function() {
-    //   // While covered: hide hero, land on desktop top
-    //   document.getElementById('heroSection').style.display = 'none';
-    //   applyScrollLock();
-    //   window.scrollTo(0, 0);
-    //   setTimeout(function() { overlay.classList.remove('active'); }, 250);
-    // }, 1800);
+      // While covered: hide hero, land on desktop top
+      document.getElementById('heroSection').style.display = 'none';
+      applyScrollLock();
+      window.scrollTo(0, 0);
+      setTimeout(function() { overlay.classList.remove('active'); }, 250);
+    }, 1800);
 
-        // 直接切换到第 3 个 Tab
-        location.hash = 'system';
-        switchTab('system');
-      }, 1800);
+      
   }
 
   document.addEventListener('keydown', function(e) {
