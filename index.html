@@ -2101,6 +2101,9 @@ body {
     if (tab === 'system' && !canvasLoaded) {
       canvasFrame.src = canvasFrame.dataset.src;
       canvasLoaded = true;
+
+      // 👇 加这一行：确保 iframe 重新加载
+      canvasFrame.style.display = 'none';
     }
     // Force top: immediately and after layout settles (defeats scroll anchoring)
     window.scrollTo(0, 0);
