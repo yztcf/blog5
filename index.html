@@ -1495,7 +1495,7 @@ body {
 <!-- Transition overlay -->
 <div class="transition-overlay" id="transitionOverlay"></div>
 
-<!-- <!-- ====== PILL NAV ====== -->
+<!-- ====== PILL NAV ====== -->
 <nav class="pill-nav hidden-during-intro" id="pillNav">
   <button data-tab="home" class="active"><span class="pill-num">01</span>主页</button>
  <button data-tab="works" onclick="event.stopPropagation();location.href='https://yztcf.de5.net'">
@@ -1505,10 +1505,10 @@ body {
  <button onclick="event.stopPropagation();location.href='/Canvas/'">我的OS</button>
    <!-- <button data-tab="system" onclick="event.stopPropagation();location.href='https://os.yztcf.de5.net/infinite-canvas.html'">
 <span class="pill-num">03</span>我的OS</button>  -->
-</nav> -->
+</nav>
 
 <!-- ====== TAB 1: HOME ====== -->
-  <main class="tab-page" id="page-system">
+ <main class="tab-page active" id="page-home">
 
   <!-- A. Terminal Hero -->
   <section class="hero-section" id="heroSection">
@@ -2053,7 +2053,7 @@ body {
 </main>
 
 <!-- ====== TAB 3: MY OS (canvas iframe) ====== -->
-<main class="tab-page active" id="page-home">
+ <main class="tab-page" id="page-system">
 
   <div class="canvas-page">
     <iframe data-src="infinite-canvas.html" id="canvasFrame" title="Zhiting's OS Canvas"></iframe>
